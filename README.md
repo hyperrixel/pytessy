@@ -24,7 +24,7 @@ You can download Tesseract-OCR from [here](https://tesseract-ocr.github.io/tessd
 
 ## Installation
 
-You can install the latest PyTeyy version with ` pip install pytessy ` or you can download the wheel from this repository or build the source code.
+You can install the latest PyTessy version with ` pip install pytessy ` or you can download the wheel from this repository or you can build it from the source code.
 
 ## Documentation
 
