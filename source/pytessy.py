@@ -33,7 +33,7 @@ See accompanying file LICENSE or a copy at https://www.boost.org/LICENSE_1_0.txt
 import __main__
 import ctypes
 import ctypes.util
-from os import chdir, environ
+from os import chdir, environ, getcwd
 from os.path import abspath, dirname, isabs, isdir, isfile, join
 from sys import platform
 
@@ -259,7 +259,7 @@ class PyTessy(object):
                  FileNotFoundError          If cannot found "tessdata" directory.
         """
 
-        run_path = dirname(abspath(__main__.__file__))
+        run_path = dirname(abspath(getcwd()))
         no_lib = True
         if lib_path is not None:
             if isfile(lib_path):
