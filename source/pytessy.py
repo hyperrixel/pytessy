@@ -91,7 +91,7 @@ class TesseractHandler(object):
 
 
 
-    def get_text(self):
+    def get_text(self, config=None):
         """
         Gets text as utf-8 decoded string
         ---------------------------------
@@ -99,7 +99,10 @@ class TesseractHandler(object):
         """
 
         self._check_setup()
-        result = self._lib.TessBaseAPIGetUTF8Text(self._api)
+        if config:
+            result = self._lib.TessBaseAPIGetUTF8Text(self._api, config=config)
+        else:
+            result = self._lib.TessBaseAPIGetUTF8Text(self._api)
         if result:
             return result.decode('utf-8')
 
@@ -258,8 +261,7 @@ class PyTessy(object):
                                             search process.
                  FileNotFoundError          If cannot found "tessdata" directory.
         """
-
-        run_path = getcwd()
+        run_path = dirname(abspath(__main__.__file__))
         no_lib = True
         if lib_path is not None:
             if isfile(lib_path):
@@ -317,15 +319,13 @@ class PyTessy(object):
                     break
             if data_path is None:
                 raise FileNotFoundError('PyTessy: Couldn\'t find "tessdata" directory.')
-        chdir(tess_path)
         self._tess = TesseractHandler(lib_path=lib_path, data_path=data_path,
                                       language=language)
-        chdir(run_path)
 
 
 
     def justread(self, raw_image_ctypes, width, height, bytes_per_pixel,
-                  bytes_per_line, resolution=96):
+                  bytes_per_line, resolution=96, config=None):
         """
         Reads text as utf-8 string from raw image data without any check
         ----------------------------------------------------------------
@@ -342,7 +342,7 @@ class PyTessy(object):
 
         self._tess.set_image(raw_image_ctypes, width, height, bytes_per_pixel,
                              bytes_per_line, resolution)
-        return self._tess.get_text()
+        return self._tess.get_text(config=config)
 
 
 
@@ -369,7 +369,7 @@ class PyTessy(object):
 
 
     def read(self, imagedata, width, height, bytes_per_pixel, resolution=96,
-             raw=False):
+             raw=False, config=None):
         """
         Reads text from image data
         --------------------------
@@ -390,7 +390,7 @@ class PyTessy(object):
                                      bytes_per_line, resolution)
         else:
             return self.justread(imagedata, width, height, bytes_per_pixel,
-                                 bytes_per_line, resolution)
+                                 bytes_per_line, resolution, config=config)
 
 
 
