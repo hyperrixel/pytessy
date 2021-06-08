@@ -91,7 +91,7 @@ class TesseractHandler(object):
 
 
 
-    def get_text(self, config=None):
+    def get_text(self):
         """
         Gets text as utf-8 decoded string
         ---------------------------------
@@ -99,12 +99,11 @@ class TesseractHandler(object):
         """
 
         self._check_setup()
-        if config:
-            result = self._lib.TessBaseAPIGetUTF8Text(self._api, config=config)
-        else:
-            result = self._lib.TessBaseAPIGetUTF8Text(self._api)
+        result = self._lib.TessBaseAPIGetUTF8Text(self._api)
         if result:
             return result.decode('utf-8')
+        else:
+            return ""
 
 
 
@@ -140,6 +139,17 @@ class TesseractHandler(object):
                                       imagedata, width, height,
                                       bytes_per_pixel, bytes_per_line)
         self._lib.TessBaseAPISetSourceResolution(self._api, resolution)
+        
+        
+    def set_variable(self, key, val):
+        """
+        Sets a variable in Tesseract
+        ----------
+        @Params: key                                    
+                 val : TYPE
+        """
+        self._check_setup()
+        self._lib.TessBaseAPISetVariable(self._api, key, val)
 
 
 
@@ -175,7 +185,11 @@ class TesseractHandler(object):
                                             ctypes.c_int,       # height
                                             ctypes.c_int,       # bytes_per_pixel
                                             ctypes.c_int)       # bytes_per_line
-
+        
+        lib.TessBaseAPISetVariable.argtypes = (cls.TessBaseAPI, 
+                                               ctypes.c_char_p, 
+                                               ctypes.c_char_p)
+        
         lib.TessBaseAPIGetUTF8Text.restype = ctypes.c_char_p        # text
         lib.TessBaseAPIGetUTF8Text.argtypes = (cls.TessBaseAPI, )   # handle
 
@@ -230,7 +244,8 @@ class PyTessy(object):
 
 
     def __init__(self, tesseract_path=None, api_version=None, lib_path=None,
-                 data_path=None, language='eng', verbose_search=False):
+                 data_path=None, language='eng', verbose_search=False, 
+                 oem=1, psm=7, char_whitelist=None):
         """
         Initializes PyTessy instance
         ----------------------------
@@ -321,11 +336,16 @@ class PyTessy(object):
                 raise FileNotFoundError('PyTessy: Couldn\'t find "tessdata" directory.')
         self._tess = TesseractHandler(lib_path=lib_path, data_path=data_path,
                                       language=language)
+        self._tess.set_variable(b"tessedit_pageseg_mode", bytes(psm))
+        self._tess.set_variable(b"tessedit_ocr_engine_mode", bytes(oem))
+        if char_whitelist:
+            self._tess.set_variable(b"tessedit_char_whitelist", char_whitelist)
+        
 
 
 
     def justread(self, raw_image_ctypes, width, height, bytes_per_pixel,
-                  bytes_per_line, resolution=96, config=None):
+                  bytes_per_line, resolution=96):
         """
         Reads text as utf-8 string from raw image data without any check
         ----------------------------------------------------------------
@@ -342,7 +362,7 @@ class PyTessy(object):
 
         self._tess.set_image(raw_image_ctypes, width, height, bytes_per_pixel,
                              bytes_per_line, resolution)
-        return self._tess.get_text(config=config)
+        return self._tess.get_text()
 
 
 
@@ -369,7 +389,7 @@ class PyTessy(object):
 
 
     def read(self, imagedata, width, height, bytes_per_pixel, resolution=96,
-             raw=False, config=None):
+             raw=False):
         """
         Reads text from image data
         --------------------------
@@ -390,7 +410,7 @@ class PyTessy(object):
                                      bytes_per_line, resolution)
         else:
             return self.justread(imagedata, width, height, bytes_per_pixel,
-                                 bytes_per_line, resolution, config=config)
+                                 bytes_per_line, resolution)
 
 
 
