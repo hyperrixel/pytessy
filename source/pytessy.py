@@ -33,7 +33,7 @@ See accompanying file LICENSE or a copy at https://www.boost.org/LICENSE_1_0.txt
 import __main__
 import ctypes
 import ctypes.util
-from os import chdir, environ
+from os import chdir, environ, getcwd
 from os.path import abspath, dirname, isabs, isdir, isfile, join
 from sys import platform
 
@@ -102,6 +102,8 @@ class TesseractHandler(object):
         result = self._lib.TessBaseAPIGetUTF8Text(self._api)
         if result:
             return result.decode('utf-8')
+        else:
+            return ""
 
 
 
@@ -137,6 +139,17 @@ class TesseractHandler(object):
                                       imagedata, width, height,
                                       bytes_per_pixel, bytes_per_line)
         self._lib.TessBaseAPISetSourceResolution(self._api, resolution)
+        
+        
+    def set_variable(self, key, val):
+        """
+        Sets a variable in Tesseract
+        ----------
+        @Params: key                                    
+                 val : TYPE
+        """
+        self._check_setup()
+        self._lib.TessBaseAPISetVariable(self._api, key, val)
 
 
 
@@ -172,7 +185,11 @@ class TesseractHandler(object):
                                             ctypes.c_int,       # height
                                             ctypes.c_int,       # bytes_per_pixel
                                             ctypes.c_int)       # bytes_per_line
-
+        
+        lib.TessBaseAPISetVariable.argtypes = (cls.TessBaseAPI, 
+                                               ctypes.c_char_p, 
+                                               ctypes.c_char_p)
+        
         lib.TessBaseAPIGetUTF8Text.restype = ctypes.c_char_p        # text
         lib.TessBaseAPIGetUTF8Text.argtypes = (cls.TessBaseAPI, )   # handle
 
@@ -227,7 +244,8 @@ class PyTessy(object):
 
 
     def __init__(self, tesseract_path=None, api_version=None, lib_path=None,
-                 data_path=None, language='eng', verbose_search=False):
+                 data_path=None, language='eng', verbose_search=False, 
+                 oem=1, psm=7, char_whitelist=None):
         """
         Initializes PyTessy instance
         ----------------------------
@@ -258,7 +276,6 @@ class PyTessy(object):
                                             search process.
                  FileNotFoundError          If cannot found "tessdata" directory.
         """
-
         run_path = dirname(abspath(__main__.__file__))
         no_lib = True
         if lib_path is not None:
@@ -317,10 +334,13 @@ class PyTessy(object):
                     break
             if data_path is None:
                 raise FileNotFoundError('PyTessy: Couldn\'t find "tessdata" directory.')
-        chdir(tess_path)
         self._tess = TesseractHandler(lib_path=lib_path, data_path=data_path,
                                       language=language)
-        chdir(run_path)
+        self._tess.set_variable(b"tessedit_pageseg_mode", bytes(psm))
+        self._tess.set_variable(b"tessedit_ocr_engine_mode", bytes(oem))
+        if char_whitelist:
+            self._tess.set_variable(b"tessedit_char_whitelist", char_whitelist)
+        
 
 
 
